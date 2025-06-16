@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Ollama LLM Extension",
+  "version": "1.0",
+  "description": "A cross-browser extension to interact with a local Ollama LLM, user-friendly for everyone",
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon01.png",
+      "48": "icon01.png",
+      "128": "icon01.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "matches": ["*://*/*"]
+  },
+  "icons": {
+    "16": "icon01.png",
+    "48": "icon01.png",
+    "128": "icon01.png"
+  }
+}
