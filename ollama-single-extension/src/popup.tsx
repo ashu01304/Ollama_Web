@@ -1,0 +1,163 @@
+import React, { useState, useEffect, FormEvent } from 'react';
+import { createRoot } from 'react-dom/client';
+import browser from 'webextension-polyfill';
+
+type Model = { name: string };
+
+const Popup = () => {
+  const [endpoint, setEndpoint] = useState('');
+  const [currentEndpoint, setCurrentEndpoint] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [model, setModel] = useState('');
+  const [models, setModels] = useState<Model[]>([]);
+  const [response, setResponse] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [domains, setDomains] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState('');
+
+  const _sendMessage = (message: object): Promise<any> => browser.runtime.sendMessage(message);
+
+  const loadEndpoint = () => {
+    _sendMessage({ type: "getEndpoint" }).then(res => {
+      if (res?.endpoint) setCurrentEndpoint(res.endpoint);
+    });
+  };
+
+  const fetchModels = () => {
+    _sendMessage({ type: "fetchModels" }).then((res: any) => {
+      if (res?.success && res.data?.models) {
+        setModels(res.data.models);
+      } else {
+        setError(res?.error || "Could not fetch models.");
+      }
+    });
+  };
+
+  const loadDomains = () => {
+    _sendMessage({ type: "getDomains" }).then(res => {
+      if (res?.domains) setDomains(res.domains);
+    });
+  };
+
+  useEffect(() => {
+    loadEndpoint();
+    fetchModels();
+    loadDomains();
+  }, []);
+
+  const handleSetEndpoint = () => {
+    if (!endpoint) return;
+    _sendMessage({ type: "setEndpoint", endpoint }).then(() => {
+      setEndpoint('');
+      loadEndpoint();
+      fetchModels();
+    });
+  };
+
+  const handleSendPrompt = (e: FormEvent) => {
+    e.preventDefault();
+    if (!prompt || !model) {
+      setError("Please enter a prompt and select a model.");
+      return;
+    }
+    setError('');
+    setResponse('');
+    setIsLoading(true);
+    _sendMessage({ type: "sendToOllama", prompt, model }).then((res: any) => {
+      if (res?.success) {
+        setResponse(res.data.response);
+      } else {
+        setError(res?.error || "An unknown error occurred.");
+      }
+    }).finally(() => setIsLoading(false));
+  };
+
+  const handleAddDomain = () => {
+    if (!newDomain) return;
+    _sendMessage({ type: "addDomain", domain: newDomain }).then(() => {
+      setNewDomain('');
+      loadDomains();
+    });
+  };
+
+  const handleAddCurrentDomain = () => {
+    _sendMessage({ type: "addCurrentDomain" }).then(loadDomains);
+  };
+  
+  const handleAllowAllDomains = () => {
+    _sendMessage({ type: "allowAllDomains" }).then(loadDomains);
+  };
+
+  const handleRemoveDomain = (domain: string) => {
+    _sendMessage({ type: "removeDomain", domain }).then(loadDomains);
+  };
+
+  return (
+    <div className="container">
+      <h2>Ollama LLM Chat</h2>
+
+      <input
+        type="text"
+        id="endpointInput"
+        placeholder={`Current: ${currentEndpoint}`}
+        value={endpoint}
+        onChange={(e) => setEndpoint(e.target.value)}
+      />
+      <button id="setEndpointButton" onClick={handleSetEndpoint}>Set Endpoint</button>
+
+      <form onSubmit={handleSendPrompt} style={{display: 'contents'}}>
+        <input
+          type="text"
+          id="prompt"
+          placeholder="Enter your prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+        
+        <div className="button-container">
+          <select id="modelSelect" value={model} onChange={(e) => setModel(e.target.value)} disabled={models.length === 0}>
+            <option value="">{models.length === 0 ? "No models found" : "Select a model"}</option>
+            {models.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+          </select>
+          <button type="submit" id="sendButton" disabled={isLoading}>
+            {isLoading ? '...' : 'Send'}
+          </button>
+        </div>
+      </form>
+      
+      <div id="response" style={{ color: error ? 'var(--color-danger)' : 'inherit' }}>
+        {isLoading ? 'Loading...' : (error || response || 'Response will appear here')}
+      </div>
+      
+      <h3>Allowed Domains</h3>
+      <div className="domain-container">
+        <input
+          type="text"
+          id="domainInput"
+          placeholder="Enter domain (e.g., *.example.com/*)"
+          value={newDomain}
+          onChange={(e) => setNewDomain(e.target.value)}
+        />
+        <div className="button-row">
+          <button id="addDomainButton" onClick={handleAddDomain}>Add</button>
+          <button id="addCurrentDomainButton" onClick={handleAddCurrentDomain}>Add Current</button>
+          <button id="allowAllButton" onClick={handleAllowAllDomains}>Allow All</button>
+        </div>
+      </div>
+      
+      <ul id="domainList">
+        {domains.length > 0 ? domains.map(d => (
+          <li key={d}>
+            <span>{d}</span>
+            <button onClick={() => handleRemoveDomain(d)}>Remove</button>
+          </li>
+        )) : <li className="empty-list-item">No domains added.</li>}
+      </ul>
+    </div>
+  );
+};
+
+const container = document.getElementById('root');
+const root = createRoot(container!);
+root.render(<Popup />);
