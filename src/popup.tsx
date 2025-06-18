@@ -112,6 +112,15 @@ const Popup = () => {
           <p>
             This extension acts as a proxy to your Ollama instance at <strong>{currentEndpoint}</strong> (can be modified in extension). It can forward requests to any valid Ollama API endpoint.
           </p>
+
+          <p>
+             <strong>Prerequisites:</strong>
+            <ul>
+            <li>Ollama must be installed and running on your local machine.</li>
+            <li>CORS settings must be configured for your browser extension. See the project's <a href="https://github.com/ashu01304/Ollama_Web" target="_blank" rel="noopener noreferrer">README</a> for instructions.</li>
+          </ul>
+          </p>
+          
           <strong>Example Endpoints:</strong>
           <p>
           <ul>

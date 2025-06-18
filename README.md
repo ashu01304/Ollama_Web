@@ -4,7 +4,7 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Built for](https://img.shields.io/badge/Built_for-Chrome_&_Firefox-green.svg)
 
-A secure, cross-browser web extension acting as a local proxy to your [Ollama](https://ollama.com/) instance, enabling web applications to communicate with local language models without exposing the Ollama API to the internet.
+A secure, cross-browser web extension that acts as a local proxy to your [Ollama](https://ollama.com/) instance, enabling web applications to communicate with local language models without exposing the Ollama API to the internet.
 
 Built with a modern Webpack system and a unified manifest for generating compatible packages for **Chrome** (Manifest V3) and **Firefox** (Manifest V2).
 
@@ -14,39 +14,70 @@ Built with a modern Webpack system and a unified manifest for generating compati
 
 * **Cross-Browser Support** : Single codebase for Chrome and Firefox.
 * **Configurable Ollama Endpoint** : Update the Ollama instance URL via the popup UI.
-* **Interactive Popup** : View available models, send test prompts, and verify connections.
+* **Interactive Popup** : Fetch available models and send test prompts.
 * **Secure Web App Integration** : Domain-based allow-list for authorized web app communication.
-* **Developer-Friendly Proxy** : Forwards requests to Ollama API endpoints (`/api/generate`, `/api/chat`, `/api/tags`).
+* **Developer-Friendly Proxy** : Forwards requests to valid Ollama API endpoints (`/api/generate`, `/api/chat`, `/api/tags`).
+
+## 🔌 Prerequisites: Setting Up Ollama
+
+Ensure the Ollama server is running locally and configured correctly before installing the extension.
+
+### 1. Install Ollama
+
+Download from the [official website](https://ollama.com/download).
+
+* **macOS** : Download and drag to Applications.
+* **Windows** : Download and run the `.exe` installer.
+* **Linux** :
+
+```bash
+  curl -fsSL https://ollama.com/install.sh | sh
+```
+
+Verify by running a model:
+
+```bash
+ollama run llama3
+```
+
+### 2. Configure Ollama CORS
+
+To simplify setup, allow all origins :
+
+* **macOS/Linux (bash)** :
+  ``OLLAMA_ORIGINS="*" ollama serve ``
+* **Windows (Command Prompt)** :
+  ``cmd set OLLAMA_ORIGINS=* && ollama serve ``
 
 ## 📦 Installation from Source
 
-1. **Clone the repository:**
+1. Clone the repository:
 
    ```bash
    git clone https://github.com/ashu01304/Ollama_Web.git
    cd Ollama_Web/ollama-webpack-extension
    ```
-2. **Install dependencies:**
+2. Install dependencies:
 
    ```bash
    yarn install
    ```
-3. **Build the extension:**
+3. Build the extension:
 
-   * **Chrome:**
+   * **Chrome** :
 
    ```bash
    yarn build:chrome
    ```
 
-   * **Firefox:**
+   * **Firefox** :
 
    ```bash
    yarn build:firefox
    ```
 
    Output: `dist/chrome` or `dist/firefox`.
-4. **Load the extension:**
+4. Load the extension:
 
    * **Chrome** :
 
