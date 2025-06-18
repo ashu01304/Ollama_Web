@@ -23,7 +23,7 @@ body {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Increased gap for more spacing */
+  gap: 10px; /* Increased gap for more spacing */
   padding: 16px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -47,7 +47,7 @@ h3 {
 
 input, select, button {
   font-size: 1em;
-  padding: 10px; /* Increased padding for taller elements */
+  padding: 8px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   box-sizing: border-box;
