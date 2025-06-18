@@ -15,6 +15,7 @@ const Popup = () => {
   const [error, setError] = useState('');
   const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
+  const [isHelpVisible, setIsHelpVisible] = useState(false); // New state for help section
 
   const _sendMessage = (message: object): Promise<any> => browser.runtime.sendMessage(message);
 
@@ -92,11 +93,41 @@ const Popup = () => {
   const handleRemoveDomain = (domain: string) => {
     _sendMessage({ type: "removeDomain", domain }).then(loadDomains);
   };
+  
+  const toggleHelp = () => {
+    setIsHelpVisible(!isHelpVisible);
+  };
 
   return (
     <div className="container">
-      <h2>Ollama LLM Chat</h2>
+      <div className="title-bar">
+        <h2>Ollama LLM Chat</h2>
+        <a href="#" className="help-toggle" onClick={toggleHelp}>
+          {isHelpVisible ? 'Close' : 'Help'}
+        </a>
+      </div>
 
+        {isHelpVisible && (
+        <div className="help-section">
+          <p>
+            This extension acts as a proxy to your Ollama instance at <strong>{currentEndpoint}</strong> (can be modified in extension). It can forward requests to any valid Ollama API endpoint.
+          </p>
+          <strong>Example Endpoints:</strong>
+          <p>
+          <ul>
+            <li><code>/api/generate</code> (generate response)</li>
+            <li><code>/api/chat</code> (chat with a model)</li>
+            <li><code>/api/tags</code> (list local models)</li>
+            <li><code>/api/pull</code> (download a model)</li>
+          </ul>
+          </p>
+          <p>
+            <strong>For Developers:</strong> Add your app's origin (e.g., <code>http://localhost:3000/*</code>) to the "Allowed Domains" list. For more info, see the <a href="https://github.com/ashu01304/Ollama_Web" target="_blank" rel="noopener noreferrer">GitHub repository</a>.
+          </p>
+        </div>
+      )}
+      
+      <h3>Ollama Endpoint</h3>
       <input
         type="text"
         id="endpointInput"
@@ -110,11 +141,11 @@ const Popup = () => {
         <input
           type="text"
           id="prompt"
-          placeholder="Enter your prompt"
+          placeholder="Enter test prompt"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
-        
+
         <div className="button-container">
           <select id="modelSelect" value={model} onChange={(e) => setModel(e.target.value)} disabled={models.length === 0}>
             <option value="">{models.length === 0 ? "No models found" : "Select a model"}</option>
