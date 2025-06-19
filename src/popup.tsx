@@ -146,11 +146,12 @@ const Popup = () => {
       />
       <button id="setEndpointButton" onClick={handleSetEndpoint}>Set Endpoint</button>
 
-      <form onSubmit={handleSendPrompt} style={{display: 'contents'}}>
+<form onSubmit={handleSendPrompt} style={{display: 'contents'}}>
         <input
           type="text"
           id="prompt"
-          placeholder="Enter test prompt"
+          autoComplete="off"
+          placeholder="Enter your prompt"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
