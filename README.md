@@ -74,11 +74,18 @@ OLLAMA_ORIGINS="chrome-extension://*,moz-extension://fac69d44-10a3-4111-8921-fbc
 ```
 
 
-* Or, to simplify setup, you can allow all origins — **note that this is not secure, as it permits anyone on your network to access your Ollama instance.**
-* **macOS/Linux (bash)** : `OLLAMA_ORIGINS="*" ollama serve `
-* **Windows (Command Prompt)** : `cmd set OLLAMA_ORIGINS=* && ollama serve `
+Or, to simplify setup, you can allow all origins — **note that this is not secure, as it permits anyone on your network to access your Ollama instance.**
 
-> Keep the terminal open during development.
+* **macOS/Linux (bash)** :
+  ```
+  OLLAMA_ORIGINS="*" ollama serve 
+  ```
+* **Windows (Command Prompt)** :
+  ```
+  cmd set OLLAMA_ORIGINS=* && ollama serve
+  ```
+
+**Keep the terminal open during development.**
 
 ---
 
@@ -191,8 +198,6 @@ async function getModels() {
 }
 ```
 
-> **Caution** : Use code carefully.
-
  **Note for Chrome Developers** : Replace `YOUR_CHROME_EXTENSION_ID_HERE` with your extension’s ID from `chrome://extensions`.
 
 ---
@@ -205,8 +210,6 @@ Install dependencies:
 yarn install
 ```
 
-> **Caution** : Use code carefully.
-
 Run development server:
 
 * For Chrome:
@@ -215,15 +218,11 @@ Run development server:
 yarn dev:chrome
 ```
 
-> **Caution** : Use code carefully.
-
 * For Firefox:
 
 ```bash
 yarn dev:firefox
 ```
-
-> **Caution** : Use code carefully.
 
 Webpack runs in "watch mode", rebuilding on file changes. Reload the extension in the browser to see updates.
 
@@ -234,8 +233,6 @@ yarn build:chrome
 # or
 yarn build:firefox
 ```
-
-> **Caution** : Use code carefully.
 
 This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in `dist/`.
 
