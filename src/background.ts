@@ -105,8 +105,7 @@ const handlePopupRequest = async (request: any) => {
 // This listener handles direct messages from web pages (Primarily for Chrome)
 browser.runtime.onMessageExternal.addListener(async (request, sender) => {
     try {
-        const response = await handleWebRequest(request, sender);
-        return response;
+        return await handleWebRequest(request, sender);
     } catch (e: any) {
         return { success: false, error: e.message };
     }
