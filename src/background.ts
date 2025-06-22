@@ -14,16 +14,23 @@ const performOllamaFetch = async (endpoint: string, options: RequestInit) => {
         options.body = JSON.stringify(options.body);
     }
     
-    const response = await fetch(url, options);
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
-    }
-    const responseText = await response.text();
-    try { 
-        return { success: true, data: JSON.parse(responseText) }; 
-    } catch (e) { 
-        return { success: true, data: responseText }; 
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ollama API Error: ${response.status} - ${errorText}`);
+        }
+        const responseText = await response.text();
+        try { 
+            return { success: true, data: JSON.parse(responseText) }; 
+        } catch (e) { 
+            return { success: true, data: responseText }; 
+        }
+    } catch (e: any) {
+        if (e.message.includes('Failed to fetch')) {
+             return { success: false, error: "Connection to Ollama failed. Ensure Ollama is running and CORS is configured."};
+        }
+        return { success: false, error: e.message };
     }
 };
 
@@ -32,8 +39,12 @@ const handleWebRequest = async (request: any, sender: browser.Runtime.MessageSen
 
     const { allowedDomains = [] } = await browser.storage.sync.get("allowedDomains");
     const senderOrigin = new URL(sender.url).origin;
-    const isAllowed = allowedDomains.includes("*://*/*") || allowedDomains.some((pattern: string) => senderOrigin.startsWith(pattern.replace('/*', '')));
-            
+    const isAllowed = allowedDomains.some((pattern: string) => {
+        if (pattern === "*://*/*") return true;
+        const simplePattern = pattern.replace(/(\*:\/\/\*|\/\*)/g, '');
+        return senderOrigin.includes(simplePattern);
+    });
+
     if (!isAllowed) {
         return { success: false, error: `Unauthorized domain: ${senderOrigin}` };
     }

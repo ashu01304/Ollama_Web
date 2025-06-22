@@ -1,4 +1,3 @@
-
 # Ollama Web Extension
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -73,7 +72,6 @@ For Both Chrome & Firefox: Use a comma-separated list.
 OLLAMA_ORIGINS="chrome-extension://*,moz-extension://fac69d44-10a3-4111-8921-fbcf0b99d5c9" ollama serve
 ```
 
-
 Or, to simplify setup, you can allow all origins — **note that this is not secure, as it permits anyone on your network to access your Ollama instance.**
 
 * **macOS/Linux (bash)** :
@@ -138,67 +136,44 @@ Click the extension icon to:
 * Send test prompts.
 * Manage allowed websites.
 
+ **Note for Chrome Developers** : Replace `YOUR_CHROME_EXTENSION_ID_HERE` with your extension’s ID from `chrome://extensions`.
+
 ### For Web App Developers
 
 The extension enables secure interaction with a local Ollama instance.
 
-1. **Authorize Your Web App** : Add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" in the popup.
-2. **Communicate from Your Web App** : Use this JavaScript snippet for Chrome and Firefox compatibility:
+1. **Authorize Your Web App**: Add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" in the popup.
+2. **Communicate from Your Web App**: The extension securely injects a `window.ollama` object into the page. Use this to send requests:
 
 ```javascript
-// --- IMPORTANT: CHROME CONFIGURATION ---
-// Replace with your extension ID from chrome://extensions
-const CHROME_EXTENSION_ID = "YOUR_CHROME_EXTENSION_ID_HERE";
+// The extension injects an `ollama` object into the window of allowed domains.
+// Check if the API is available before using it.
+if (window.ollama) {
+  // Example: Fetching models
+  async function getModels() {
+    try {
+      const response = await window.ollama.request(
+        '/api/tags',
+        { method: 'GET' }
+      );
 
-// Helper function for Chrome and Firefox
-function sendMessageToOllamaExtension(payload) {
-  // For Chrome, use sendMessage API
-  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(CHROME_EXTENSION_ID, payload, (response) => {
-        if (chrome.runtime.lastError) {
-          resolve({ success: false, error: `Extension not found or error: ${chrome.runtime.lastError.message}` });
-        } else {
-          resolve(response);
-        }
-      });
-    });
-  }
-
-  // For Firefox, use postMessage bridge
-  return new Promise((resolve) => {
-    const listener = (event) => {
-      if (event.source === window && event.data && event.data.direction === "extension-to-formstr") {
-        window.removeEventListener("message", listener);
-        resolve(event.data.message);
+      if (response.success) {
+        console.log("Available models:", response.data.models);
+      } else {
+        console.error("Error:", response.error);
       }
-    };
-    window.addEventListener("message", listener);
-
-    window.postMessage({
-      direction: "formstr-to-extension",
-      message: payload,
-    }, "*");
-  });
-}
-
-// Example: Fetching models
-async function getModels() {
-  const response = await sendMessageToOllamaExtension({
-    type: "ollamaRequest",
-    endpoint: "/api/tags",
-    options: { method: 'GET' },
-  });
-
-  if (response.success) {
-    console.log("Available models:", response.data.models);
-  } else {
-    console.error("Error:", response.error);
+    } catch (e) {
+      console.error("Failed to communicate with the extension:", e);
+    }
   }
+
+  // Call the function
+  getModels();
+} else {
+  console.error("Ollama extension API not found. Ensure the extension is installed and this domain is allowed.");
 }
 ```
 
- **Note for Chrome Developers** : Replace `YOUR_CHROME_EXTENSION_ID_HERE` with your extension’s ID from `chrome://extensions`.
 
 ---
 

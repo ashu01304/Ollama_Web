@@ -35,6 +35,15 @@
       "js": ["js/content.bundle.js"]
     }
   ],
+  "__chrome__web_accessible_resources": [
+    {
+      "resources": ["js/bridge.bundle.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "__firefox__web_accessible_resources": [
+    "js/bridge.bundle.js"
+  ],
 
   "externally_connectable": {
     "matches": ["<all_urls>"]

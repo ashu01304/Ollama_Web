@@ -25,6 +25,7 @@ module.exports = {
     background: "./src/background.ts",
     content: "./src/content.ts",
     popup: "./src/popup.tsx",
+    bridge: "./src/bridge.ts",
   },
 
   output: {
