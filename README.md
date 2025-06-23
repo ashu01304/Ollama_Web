@@ -12,10 +12,10 @@ This project uses a modern Webpack build system and a unified manifest to automa
 ## ✨ Features
 
 * **Cross-Browser Support** : Single codebase for Chrome and Firefox.
-* **Configurable Ollama Endpoint** : Change the URL in popup UI.
-* **Interactive Popup** : Fetch models and send test prompts.
+* **Configurable Ollama Endpoint** : Change the API URL in the popup UI.
+* **Interactive Popup** : Fetch models and send test prompts directly.
 * **Secure Web App Integration** : Domain-based allow-list for authorized web applications.
-* **Developer-Friendly Proxy** : Forwards requests to valid Ollama API endpoints (e.g., `/api/generate`, `/api/chat`, `/api/tags`).
+* **Injected `window.ollama` API** : Provides a clean, developer-friendly API directly in your web app, no extension ID required.
 
 ---
 
@@ -23,11 +23,7 @@ This project uses a modern Webpack build system and a unified manifest to automa
 
 Before using the extension, ensure Ollama server is running locally and configured.
 
-### 2. Configure Ollama CORS (For Development)
-
 ### 1. Install Ollama
-
-[](https://github.com/ashu01304/Ollama_Web/edit/main/README.md#1-install-ollama)
 
 Download from the [official website](https://ollama.com/download).
 
@@ -92,8 +88,8 @@ Or, to simplify setup, you can allow all origins — **note that this is not sec
 Clone the repository:
 
 ```bash
-git clone https://github.com/dashu0134/Ollama-Web.git
-cd Ollama-Web/ollama-webpack-extension
+git clone https://github.com/ashu01304/Ollama_Web.git
+cd Ollama_Web
 ```
 
 Install dependencies:
@@ -107,121 +103,125 @@ Build the extension:
 * For Chrome: `yarn build:chrome`
 * For Firefox: `yarn build:firefox`
 
-This creates a `dist/chrome` or `dist/firefox` folder with the installable extension.
+This creates a `dist/chrome` or `dist/firefox` folder.
 
-Load the extension:
+### Load the Extension
 
-#### Chrome:
+* **Chrome** :
 
 1. Go to `chrome://extensions`.
 2. Enable "Developer mode".
-3. Click "Load unpacked" and select `dist/chrome`.
+3. Click "Load unpacked" and select the `dist/chrome` folder.
 
-#### Firefox:
+* **Firefox** :
 
 1. Go to `about:debugging#/runtime/this-firefox`.
 2. Click "Load Temporary Add-on...".
-3. Select any file in `dist/firefox` (e.g., `manifest.json`).
-
----
+3. Select any file inside the `dist/firefox` folder (e.g., `manifest.json`).
 
 ## 🚀 Usage
 
 ### For Direct Use (Popup UI)
 
-Click the extension icon to:
+Click the extension icon in your browser to:
 
-* Verify/change Ollama API endpoint.
-* List downloaded models.
-* Send test prompts.
-* Manage allowed websites.
-
- **Note for Chrome Developers** : Replace `YOUR_CHROME_EXTENSION_ID_HERE` with your extension’s ID from `chrome://extensions`.
+* Verify or change the Ollama API endpoint.
+* List your downloaded models.
+* Send test prompts to a model.
+* Manage which websites are allowed to access the API.
 
 ### For Web App Developers
 
-The extension enables secure interaction with a local Ollama instance.
+The extension enables secure interaction by injecting a `window.ollama` object into the pages of allowed domains.
 
-1. **Authorize Your Web App**: Add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" in the popup.
-2. **Communicate from Your Web App**: The extension securely injects a `window.ollama` object into the page. Use this to send requests:
+1. **Authorize Your Web App** : Open the extension popup and add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" list.
+2. **Communicate from Your Web App** : Use the injected `window.ollama` object to send requests.
+
+#### Example 1: Fetching available models
 
 ```javascript
-// The extension injects an `ollama` object into the window of allowed domains.
 // Check if the API is available before using it.
 if (window.ollama) {
-  // Example: Fetching models
   async function getModels() {
     try {
-      const response = await window.ollama.request(
-        '/api/tags',
-        { method: 'GET' }
-      );
-
+      const response = await window.ollama.getModels();
       if (response.success) {
         console.log("Available models:", response.data.models);
       } else {
-        console.error("Error:", response.error);
+        console.error("Error fetching models:", response.error);
       }
     } catch (e) {
       console.error("Failed to communicate with the extension:", e);
     }
   }
 
-  // Call the function
   getModels();
 } else {
   console.error("Ollama extension API not found. Ensure the extension is installed and this domain is allowed.");
 }
 ```
 
+#### Example 2: Generating a response
 
----
+```javascript
+if (window.ollama) {
+  async function generateResponse() {
+    const params = {
+      model: "llama3", // The model to use
+      prompt: "Why is the sky blue?",
+      stream: false,
+      // Ensure streaming is off for a single response
+    };
+
+    try {
+      const response = await window.ollama.generate(params);
+      if (response.success) {
+        console.log("AI Response:", response.data.response);
+      } else {
+        console.error("Error generating response:", response.error);
+      }
+    } catch (e) {
+      console.error("Failed to communicate with the extension:", e);
+    }
+  }
+  generateResponse();
+}
+}
+```
 
 ## 🛠️ Development Workflow
 
-Install dependencies:
+1. Install dependencies:
 
-```bash
-yarn install
-```
+   ```bash
+   yarn install
+   ```bash
+   Run development server (rebuilds on file change):
+   ```
 
-Run development server:
+   * For Chrome: `yarn dev:chrome`
+   * For Firefox: `yarn dev:firefox`
 
-* For Chrome:
+   ```
 
-```bash
-yarn dev:chrome
-```
+   ```
+2. Create a production build:
 
-* For Firefox:
+   ```bash
+   yarn build:chrome
+   # or
+   yarn build:firefox
+   ```
 
-```bash
-yarn dev:firefox
-```
-
-Webpack runs in "watch mode", rebuilding on file changes. Reload the extension in the browser to see updates.
-
-Create a production build:
-
-```bash
-yarn build:chrome
-# or
-yarn build:firefox
-```
-
-This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in `dist/`.
-
----
+This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in the `dist/` directory.
 
 ## 🛠️ Technology Stack
 
 * **TypeScript** : Robust, maintainable code.
-* **Webpack** : Professional extension bundler.
+* **Webpack** : Professional extension bundling.
 * **React** : Popup UI.
 * **webextension-polyfill** : Cross-browser extension APIs.
 
----
-
-## 📄 License
+## 📜 License
 
 MIT License.
