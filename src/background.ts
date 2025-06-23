@@ -46,13 +46,29 @@ const handleWebRequest = async (request: any, sender: browser.Runtime.MessageSen
     });
 
     if (!isAllowed) {
-        return { success: false, error: `Unauthorized domain: ${senderOrigin}` };
+        const popupUrl = browser.runtime.getURL("popup.html");
+        browser.windows.create({
+            url: popupUrl,
+            type: "popup",
+            width: 420,
+            height: 600,
+        });
+        return { success: false, error: `Unauthorized domain: ${senderOrigin}. Please add it to the extension's allow-list.` };
     }
 
-    if (request.type === 'ollamaRequest') {
-        return performOllamaFetch(request.endpoint, request.options);
+    // Handle high-level commands
+    switch (request.type) {
+        case 'testConnection':
+            return performOllamaFetch('/', { method: 'GET' });
+        case 'getModels':
+            return performOllamaFetch('/api/tags', { method: 'GET' });
+        case 'generate':
+            return performOllamaFetch('/api/generate', { method: 'POST', body: JSON.stringify(request.params) });
+        case 'ollamaRequest':
+            return performOllamaFetch(request.endpoint, request.options);
+        default:
+            return { success: false, error: `Unsupported request type: ${request.type}` };
     }
-    return { success: false, error: `Unsupported request type from web page: ${request.type}` };
 };
 
 const handlePopupRequest = async (request: any) => {
@@ -113,16 +129,6 @@ const handlePopupRequest = async (request: any) => {
 
 // --- Listeners ---
 
-// This listener handles direct messages from web pages (Primarily for Chrome)
-browser.runtime.onMessageExternal.addListener(async (request, sender) => {
-    try {
-        return await handleWebRequest(request, sender);
-    } catch (e: any) {
-        return { success: false, error: e.message };
-    }
-});
-
-// This listener handles messages from within the extension (popup, and content script for Firefox)
 browser.runtime.onMessage.addListener(async (request, sender) => {
     try {
         if (sender.tab && sender.url) {
