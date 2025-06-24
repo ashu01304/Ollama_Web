@@ -47,12 +47,16 @@ const handleWebRequest = async (request: any, sender: browser.Runtime.MessageSen
 
     if (!isAllowed) {
         const popupUrl = browser.runtime.getURL("popup.html");
-        browser.windows.create({
-            url: popupUrl,
-            type: "popup",
-            width: 420,
-            height: 600,
-        });
+        const tabs = await browser.tabs.query({ url: popupUrl });
+
+        if (tabs.length === 0) {
+            browser.windows.create({
+                url: popupUrl,
+                type: "popup",
+                width: 420,
+                height: 600,
+            });
+        }
         return { success: false, error: `Unauthorized domain: ${senderOrigin}. Please add it to the extension's allow-list.` };
     }
 
