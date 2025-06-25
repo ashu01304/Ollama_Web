@@ -134,10 +134,13 @@ Click the extension icon in your browser to:
 
 The extension enables secure interaction by injecting a `window.ollama` object into the pages of allowed domains.
 
-1. **Authorize Your Web App** : Open the extension popup and add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" list.
-2. **Communicate from Your Web App** : Use the injected `window.ollama` object to send requests.
+1.  **Authorize Your Web App**: Open the extension popup and add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" list.
+2.  **Communicate from Your Web App**: Once authorized, use the `window.ollama` object, which provides three main functions:
+    *   `getModels()`: A simple helper to list available local models.
+    *   `generate()`: A helper to get a single, non-streamed response from a model.
+    *   `request()`: A powerful, low-level function to interact with any Ollama API endpoint, giving you full control.
 
-#### Example 1: Fetching available models
+#### Example 1: Fetching available models with `getModels()`
 
 ```javascript
 // Check if the API is available before using it.
@@ -161,7 +164,7 @@ if (window.ollama) {
 }
 ```
 
-#### Example 2: Generating a response
+#### Example 2: Generating a response with `generate()`
 
 ```javascript
 if (window.ollama) {
@@ -169,8 +172,7 @@ if (window.ollama) {
     const params = {
       model: "llama3", // The model to use
       prompt: "Why is the sky blue?",
-      stream: false,
-      // Ensure streaming is off for a single response
+      stream: false,   // Ensure streaming is off for a single response
     };
 
     try {
@@ -186,6 +188,39 @@ if (window.ollama) {
   }
   generateResponse();
 }
+```
+
+#### Example 3: Advanced usage with `request()`
+
+The `request` function allows you to call any endpoint in the [Ollama API Documentation](https://github.com/ollama/ollama/blob/main/docs/api.md). This is useful for tasks not covered by the helpers, like pulling new models, creating custom models, or managing embeddings.
+
+Here's how to pull a new model:
+```javascript
+if (window.ollama) {
+  async function pullModel() {
+    const params = {
+      name: "mistral", // The model to pull
+      stream: false,
+    };
+
+    try {
+      // Use the generic 'request' method for full API access
+      const response = await window.ollama.request('/api/pull', {
+        method: 'POST',
+        body: JSON.stringify(params)
+      });
+
+      if (response.success) {
+        console.log("Successfully started pulling model:", response.data);
+      } else {
+        console.error("Error pulling model:", response.error);
+      }
+    } catch (e) {
+      console.error("Failed to communicate with the extension:", e);
+    }
+  }
+
+  pullModel();
 }
 ```
 
@@ -195,24 +230,23 @@ if (window.ollama) {
 
    ```bash
    yarn install
+   ```
+2. Run development server (rebuilds on file change):
    ```bash
-   Run development server (rebuilds on file change):
+   # For Chrome
+   yarn dev:chrome
+
+   # For Firefox
+   yarn dev:firefox
    ```
-
-   * For Chrome: `yarn dev:chrome`
-   * For Firefox: `yarn dev:firefox`
-
-   ```
-
-   ```
-2. Create a production build:
-
+3. Create a production build:
    ```bash
+   # For Chrome
    yarn build:chrome
-   # or
+   
+   # For Firefox
    yarn build:firefox
    ```
-
 This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in the `dist/` directory.
 
 ## 🛠️ Technology Stack
@@ -225,3 +259,4 @@ This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in the `dist/` dir
 ## 📜 License
 
 MIT License.
+```
