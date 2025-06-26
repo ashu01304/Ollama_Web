@@ -15,7 +15,7 @@ const Popup = () => {
   const [error, setError] = useState('');
   const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
-  const [isHelpVisible, setIsHelpVisible] = useState(false); // New state for help section
+  const [isHelpVisible, setIsHelpVisible] = useState(false);
 
   const _sendMessage = (message: object): Promise<any> => browser.runtime.sendMessage(message);
 
@@ -65,13 +65,37 @@ const Popup = () => {
     setError('');
     setResponse('');
     setIsLoading(true);
-    _sendMessage({ type: "sendToOllama", prompt, model }).then((res: any) => {
-      if (res?.success) {
-        setResponse(res.data.response);
-      } else {
-        setError(res?.error || "An unknown error occurred.");
+
+    const port = browser.runtime.connect({ name: "ollama-stream" });
+    
+    port.onMessage.addListener((msg) => {
+      if (msg.type === 'CHUNK') {
+        setResponse(prev => prev + (msg.data.response || ''));
+      } else if (msg.type === 'DONE') {
+        setIsLoading(false);
+        port.disconnect();
+      } else if (msg.type === 'ERROR') {
+        setError(msg.error || "An unknown streaming error occurred.");
+        setIsLoading(false);
+        port.disconnect();
       }
-    }).finally(() => setIsLoading(false));
+    });
+
+    port.onDisconnect.addListener(() => {
+      setIsLoading(false);
+      if (port.error) {
+        setError(`Disconnected: ${port.error.message}`);
+      }
+    });
+    
+    port.postMessage({
+      type: "streamOllama",
+      params: {
+        model: model,
+        prompt: prompt,
+        stream: true
+      }
+    });
   };
 
   const handleAddDomain = () => {
@@ -107,12 +131,11 @@ const Popup = () => {
         </a>
       </div>
 
-        {isHelpVisible && (
+      {isHelpVisible && (
         <div className="help-section">
           <p>
             This extension acts as a proxy to your Ollama instance at <strong>{currentEndpoint}</strong> (can be modified in extension). It can forward requests to any valid Ollama API endpoint.
           </p>
-
           <p>
              <strong>Prerequisites:</strong>
             <ul>
@@ -120,7 +143,6 @@ const Popup = () => {
             <li>CORS settings must be configured for your browser extension. See the project's <a href="https://github.com/ashu01304/Ollama_Web" target="_blank" rel="noopener noreferrer">README</a> for instructions.</li>
           </ul>
           </p>
-          
           <strong>Example Endpoints:</strong>
           <p>
           <ul>
@@ -168,7 +190,8 @@ const Popup = () => {
       </form>
       
       <div id="response" style={{ color: error ? 'var(--color-danger)' : 'inherit' }}>
-        {isLoading ? 'Loading...' : (error || response || 'Response will appear here')}
+        {isLoading && !response && 'Loading...'}
+        {response || (!isLoading ? error || 'Response will appear here' : '')}
       </div>
       
       <h3>Allowed Domains</h3>
