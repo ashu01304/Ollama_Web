@@ -12,25 +12,52 @@ window.addEventListener("message", (event) => {
         return;
     }
 
+    const request = event.data.message;
     const requestId = event.data.requestId;
 
-    // Forward the message to the background script
-    browser.runtime.sendMessage(event.data.message)
-        .then(response => {
-            // Send the response back to the injected script, including the original requestId
+    // --- Streaming vs. Non-Streaming Logic ---
+    const isStreaming = request.params?.stream === true;
+
+    if (isStreaming) {
+        const port = browser.runtime.connect({ name: 'ollama-stream' });
+        port.onMessage.addListener((msg) => {
             window.postMessage({
                 direction: "extension-to-formstr",
-                message: response,
-                requestId: requestId
-            }, "*");
-        })
-        .catch(error => {
-            // Send an error response back if something goes wrong
-            const errorResponse = { success: false, error: error.message };
-            window.postMessage({
-                direction: "extension-to-formstr",
-                message: errorResponse,
+                message: msg, // Forward the raw chunk, done, or error message
                 requestId: requestId
             }, "*");
         });
+
+        port.onDisconnect.addListener(() => {
+            // Ensure a final message is sent so the page knows the stream is over
+            const finalMsg = { type: 'DISCONNECTED' };
+            window.postMessage({
+                direction: "extension-to-formstr",
+                message: finalMsg,
+                requestId: requestId
+            }, "*");
+        });
+        port.postMessage({
+            type: "streamOllama",
+            params: request.params
+        });
+
+    } else {
+        browser.runtime.sendMessage(request)
+            .then(response => {
+                window.postMessage({
+                    direction: "extension-to-formstr",
+                    message: response,
+                    requestId: requestId
+                }, "*");
+            })
+            .catch(error => {
+                const errorResponse = { success: false, error: error.message };
+                window.postMessage({
+                    direction: "extension-to-formstr",
+                    message: errorResponse,
+                    requestId: requestId
+                }, "*");
+            });
+    }
 });
