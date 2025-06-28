@@ -2,9 +2,7 @@ import browser from "webextension-polyfill";
 
 const DEFAULT_OLLAMA_BASE_URL = 'http://127.0.0.1:11434';
 
-// --- Shared Logic (No Changes) ---
 const performOllamaFetch = async (endpoint: string, options: RequestInit) => {
-    // ... (This function is unchanged)
     const { ollamaEndpoint } = await browser.storage.sync.get("ollamaEndpoint");
     const ollamaBaseUrl = ollamaEndpoint || DEFAULT_OLLAMA_BASE_URL;
     const url = new URL(endpoint, ollamaBaseUrl).href;
@@ -17,6 +15,14 @@ const performOllamaFetch = async (endpoint: string, options: RequestInit) => {
             const errorText = await response.text();
             throw new Error(`Ollama API Error: ${response.status} - ${errorText}`);
         }
+        
+        // --- FIX 1 ---
+        // Correctly check for a DELETE method on success.
+        // Ollama returns 200 OK with no body for a successful delete.
+        if (response.status === 200 && options.method === 'DELETE' && endpoint === '/api/delete') {
+            return { success: true };
+        }
+
         const responseText = await response.text();
         try { return { success: true, data: JSON.parse(responseText) }; } catch (e) { return { success: true, data: responseText }; }
     } catch (e: any) {
@@ -28,7 +34,6 @@ const performOllamaFetch = async (endpoint: string, options: RequestInit) => {
 };
 
 const handleWebRequest = async (request: any, sender: browser.Runtime.MessageSender) => {
-    // ... (This function is unchanged)
     if (!sender.url) return { success: false, error: "Sender URL not available." };
     const { allowedDomains = [] } = await browser.storage.sync.get("allowedDomains");
     const senderOrigin = new URL(sender.url).origin;
@@ -38,24 +43,26 @@ const handleWebRequest = async (request: any, sender: browser.Runtime.MessageSen
         return senderOrigin.includes(simplePattern);
     });
     if (!isAllowed) {
-        const popupUrl = browser.runtime.getURL("popup.html");
-        const tabs = await browser.tabs.query({ url: popupUrl });
-        if (tabs.length === 0) {
-            browser.windows.create({ url: popupUrl, type: "popup", width: 420, height: 600 });
-        }
         return { success: false, error: `Unauthorized domain: ${senderOrigin}. Please add it to the extension's allow-list.` };
     }
+
     switch (request.type) {
         case 'testConnection': return performOllamaFetch('/', { method: 'GET' });
         case 'getModels': return performOllamaFetch('/api/tags', { method: 'GET' });
         case 'generate': return performOllamaFetch('/api/generate', { method: 'POST', body: JSON.stringify(request.params) });
+        case 'chat': return performOllamaFetch('/api/chat', { method: 'POST', body: JSON.stringify(request.params) });
+        case 'pull': return performOllamaFetch('/api/pull', { method: 'POST', body: JSON.stringify(request.params) });
+        
+        // --- FIX 2 ---
+        // Use the DELETE method for the developer API helper.
+        case 'delete': return performOllamaFetch('/api/delete', { method: 'DELETE', body: JSON.stringify(request.params) });
+        
         case 'ollamaRequest': return performOllamaFetch(request.endpoint, request.options);
         default: return { success: false, error: `Unsupported request type: ${request.type}` };
     }
 };
 
 const handlePopupRequest = async (request: any) => {
-    // ... (This function is unchanged)
     switch(request.type) {
         case "getDomains": {
             const { allowedDomains = [] } = await browser.storage.sync.get("allowedDomains");
@@ -103,16 +110,18 @@ const handlePopupRequest = async (request: any) => {
         }
         case 'fetchModels':
             return performOllamaFetch('/api/tags', { method: 'GET' });
-        case 'sendToOllama':
-             if (request.params?.stream === true) {
-                return { success: false, error: "Streaming is not supported through this message type." };
+        
+        case 'deleteModel': {
+            if (request.model) {
+                // --- FIX 3 ---
+                // Use the DELETE method for the popup UI.
+                return performOllamaFetch('/api/delete', { method: 'DELETE', body: JSON.stringify({ name: request.model }) });
             }
-            const options = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: request.model, prompt: request.prompt, stream: false }) };
-            return performOllamaFetch('/api/generate', options);
+            return { success: false, error: "Model name not provided." };
+        }
     }
 };
 
-// --- Listeners (No Changes) ---
 browser.runtime.onMessage.addListener(async (request, sender) => {
     try {
         if (sender.tab && sender.url) {
@@ -125,13 +134,9 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
     }
 });
 
-
-// --- Streaming Connection Listener ---
-
 browser.runtime.onConnect.addListener((port) => {
     if (port.name !== 'ollama-stream') return;
 
-    // --- THIS IS THE FIX ---
     const streamToPort = async (endpoint: string, options: RequestInit, p: browser.Runtime.Port) => {
         const { ollamaEndpoint } = await browser.storage.sync.get("ollamaEndpoint");
         const ollamaBaseUrl = ollamaEndpoint || DEFAULT_OLLAMA_BASE_URL;
@@ -144,44 +149,29 @@ browser.runtime.onConnect.addListener((port) => {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let buffer = ''; // The line buffer
+            let buffer = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
-                    // If there's anything left in the buffer when the stream is done, process it.
                     if (buffer.length > 0) {
-                        try {
-                            p.postMessage({ type: 'CHUNK', data: JSON.parse(buffer) });
-                        } catch(e) {
-                            console.warn("Ollama-web: Unparsable final chunk ignored", buffer);
-                        }
+                        try { p.postMessage({ type: 'CHUNK', data: JSON.parse(buffer) }); } catch(e) { console.warn("Ollama-web: Unparsable final chunk ignored", buffer); }
                     }
                     break;
                 }
                 
-                // Add the new data to our buffer
                 buffer += decoder.decode(value, { stream: true });
-                
-                // Process all complete lines in the buffer
                 const lines = buffer.split('\n');
-                // The last item in the array might be an incomplete line, so we keep it in the buffer
                 buffer = lines.pop() || ''; 
                 
                 for (const line of lines) {
                     if (line.trim() === '') continue;
-                    try {
-                        p.postMessage({ type: 'CHUNK', data: JSON.parse(line) });
-                    } catch (e) {
-                        console.warn("Ollama-web: Non-JSON chunk ignored", line);
-                    }
+                    try { p.postMessage({ type: 'CHUNK', data: JSON.parse(line) }); } catch (e) { console.warn("Ollama-web: Non-JSON chunk ignored", line); }
                 }
             }
             p.postMessage({ type: 'DONE' });
         } catch (e: any) {
-            const errorMsg = e.message.includes('Failed to fetch')
-                ? "Connection to Ollama failed. Ensure Ollama is running and CORS is configured."
-                : e.message;
+            const errorMsg = e.message.includes('Failed to fetch') ? "Connection to Ollama failed. Ensure Ollama is running and CORS is configured." : e.message;
             p.postMessage({ type: 'ERROR', error: errorMsg });
         } finally {
             p.disconnect();
@@ -204,13 +194,15 @@ browser.runtime.onConnect.addListener((port) => {
             }
         }
         
-        if (msg.type === 'streamOllama') {
+        if (msg.type === 'streamRequest' && msg.endpoint) {
              const options = {
-                method: "POST",
+                // NOTE: All current streaming endpoints use POST. If a future one uses a different
+                // method, this would need to be passed in the message.
+                method: "POST", 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(msg.params)
             };
-            await streamToPort('/api/generate', options, port);
+            await streamToPort(msg.endpoint, options, port);
         }
     });
 });
