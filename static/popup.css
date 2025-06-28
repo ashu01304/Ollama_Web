@@ -2,7 +2,7 @@
   --color-bg: #ffffff;
   --color-border: #e0e0e0;
   --color-text: #212121;
-  --color-muted: #f5f5f5;
+  --color-muted: #e2e2e2;
   --color-primary: #37474f;
   --color-primary-hover: #263238;
   --color-accent: #00796b;
@@ -45,6 +45,12 @@ h3 {
   border-top: 1px solid var(--color-border);
 }
 
+h4 {
+  font-size: 0.95em;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+}
+
 input, select, button {
   font-size: 1rem; 
   padding: 10px;
@@ -61,6 +67,16 @@ select {
 button {
   font-weight: 500;
   cursor: pointer;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+}
+button:hover {
+  background-color: var(--color-primary-hover);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .button-container {
@@ -71,28 +87,12 @@ button {
 
 #sendButton {
   background-color: var(--color-accent);
-  color: white;
-  border: none;
   flex-shrink: 0;
   width: 100px;
   font-weight: 600;
 }
 #sendButton:hover {
   background-color: var(--color-accent-hover);
-}
-#sendButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-#setEndpointButton {
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  font-weight: 500;
-}
-#setEndpointButton:hover {
-  background-color: var(--color-primary-hover);
 }
 
 #response {
@@ -106,69 +106,55 @@ button {
   word-wrap: break-word;
 }
 
+.domain-container, .model-management-container, .button-row, .confirmation-buttons {
+  display: flex;
+  gap: 8px;
+}
 .domain-container {
-  display: flex;
   flex-direction: column;
-  gap: 8px;
 }
-
-.button-row {
-  display: flex;
-  gap: 8px;
-}
-
 .button-row button {
   flex: 1;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
   font-size: 0.9em;
-  font-weight: 500;
-}
-.button-row button:hover {
-  background-color: var(--color-primary-hover);
 }
 
-#domainList {
+#domainList, .local-models-list {
   list-style: none;
   padding: 0;
   margin: 0;
   font-size: 0.9em;
-  max-height: 100px;
+  max-height: 120px;
   overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: 6px;
 }
-
-#domainList li {
+#domainList li, .local-models-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px;
   border-bottom: 1px solid #e0e0e0;
 }
-#domainList li:last-child {
+#domainList li:last-child, .local-models-list li:last-child {
   border-bottom: none;
 }
 
-#domainList li.empty-list-item {
+#domainList li.empty-list-item,
+.local-models-list li.empty-list-item {
   color: #888;
   justify-content: center;
   font-style: italic;
 }
 
-#domainList li button {
+#domainList li button, .local-models-list li button {
   background-color: var(--color-danger);
-  color: white;
-  border: none;
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.85em;
-  cursor: pointer;
   flex: none;
   width: auto;
 }
-#domainList li button:hover {
+#domainList li button:hover, .local-models-list li button:hover {
   background-color: var(--color-danger-hover);
 }
 
@@ -184,10 +170,7 @@ button {
   text-decoration: none;
   cursor: pointer;
 }
-.help-toggle:hover {
-  text-decoration: underline;
-}
-
+.help-toggle:hover { text-decoration: underline; }
 .help-section {
   background-color: #eef7ff;
   border: 1px solid #cce4ff;
@@ -198,35 +181,64 @@ button {
   margin-top: 5px;
   margin-bottom: 5px;
 }
+.help-section p { margin: 0 0 10px 0; }
+.help-section ul { margin: 0 0 10px 0; padding-left: 20px; }
+.help-section li { margin-bottom: 5px; }
 
-.help-section p {
+.advanced-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  margin-top: 5px;
+  /* --- MODIFIED: Added background color --- */
+  background-color: var(--color-muted);
+}
+
+.model-management-container input { flex: 1; }
+.model-management-container button {
+  width: 80px;
+  flex-shrink: 0;
+  background-color: var(--color-accent);
+}
+.model-management-container button:hover { background-color: var(--color-accent-hover); }
+
+.pull-status {
+  font-size: 0.85em;
+  color: #555;
+  min-height: 1.2em;
+  text-align: center;
+  padding: 2px;
+}
+
+.confirmation-dialog {
+  padding: 10px;
+  background-color: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  text-align: center;
+}
+.confirmation-dialog p {
   margin: 0 0 10px 0;
-}
-
-.help-section ul {
-  margin: 0 0 10px 0;
-  padding-left: 20px;
-}
-
-.help-section li {
-  margin-bottom: 5px;
-}
-
-.help-section code {
-  background-color: #dbeafe;
-  color: #2563eb;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-family: 'Courier New', Courier, monospace;
   font-size: 0.95em;
 }
-
-.help-section a {
-  color: var(--color-accent);
-  text-decoration: none;
-  font-weight: 500;
+.confirmation-buttons button {
+  flex: 1;
+  font-size: 0.9em;
+  padding: 8px;
 }
-
-.help-section a:hover {
-  text-decoration: underline;
+.confirmation-buttons .confirm-btn {
+  background-color: var(--color-danger);
+}
+.confirmation-buttons .confirm-btn:hover {
+  background-color: var(--color-danger-hover);
+}
+.confirmation-buttons .cancel-btn {
+  background-color: #ccc;
+  color: #333;
+}
+.confirmation-buttons .cancel-btn:hover {
+  background-color: #bbb;
 }

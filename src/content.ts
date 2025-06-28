@@ -15,8 +15,8 @@ window.addEventListener("message", (event) => {
     const request = event.data.message;
     const requestId = event.data.requestId;
 
-    // --- Streaming vs. Non-Streaming Logic ---
-    const isStreaming = request.params?.stream === true;
+    // MODIFIED: Check for streaming in a more generic way
+    const isStreaming = request.params?.stream === true && request.endpoint;
 
     if (isStreaming) {
         const port = browser.runtime.connect({ name: 'ollama-stream' });
@@ -29,7 +29,6 @@ window.addEventListener("message", (event) => {
         });
 
         port.onDisconnect.addListener(() => {
-            // Ensure a final message is sent so the page knows the stream is over
             const finalMsg = { type: 'DISCONNECTED' };
             window.postMessage({
                 direction: "extension-to-formstr",
@@ -37,8 +36,11 @@ window.addEventListener("message", (event) => {
                 requestId: requestId
             }, "*");
         });
+
+        // MODIFIED: Send a generic stream request instead of a hard-coded one
         port.postMessage({
-            type: "streamOllama",
+            type: "streamRequest",
+            endpoint: request.endpoint,
             params: request.params
         });
 
