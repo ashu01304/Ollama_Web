@@ -149,10 +149,36 @@ const Popup = () => {
         <a href="#" className="help-toggle" onClick={toggleHelp}>{isHelpVisible ? 'Close' : 'Help'}</a>
       </div>
 
-      {isHelpVisible && ( <div className="help-section"> ... </div> )}
+      {isHelpVisible && (
+        <div className="help-section">
+          <p>
+            This extension acts as a proxy to your Ollama instance at <strong>{currentEndpoint}</strong> (can be modified in extension). It can forward requests to any valid Ollama API endpoint.
+          </p>
+
+          <p>
+             <strong>Prerequisites:</strong>
+            <ul>
+            <li>Ollama must be installed and running on your local machine.</li>
+            <li>CORS settings must be configured for your browser extension. See the project's <a href="https://github.com/ashu01304/Ollama_Web" target="_blank" rel="noopener noreferrer">README</a> for instructions.</li>
+          </ul>
+          </p>
+          
+          <strong>Example Endpoints:</strong>
+          <p>
+          <ul>
+            <li><code>/api/generate</code> (generate response)</li>
+            <li><code>/api/chat</code> (chat with a model)</li>
+            <li><code>/api/tags</code> (list local models)</li>
+            <li><code>/api/pull</code> (download a model)</li>
+          </ul>
+          </p>
+          <p>
+            <strong>For Developers:</strong> Add your app's origin (e.g., <code>http://localhost:3000/*</code>) to the "Allowed Domains" list. For more info, see the <a href="https://github.com/ashu01304/Ollama_Web" target="_blank" rel="noopener noreferrer">GitHub repository</a>.
+          </p>
+        </div>
+      )}
       
       <h3>Ollama Endpoint</h3>
-      {/* --- MODIFIED: Restructured this section --- */}
       <input
         type="text"
         placeholder={`Current: ${currentEndpoint}`}
