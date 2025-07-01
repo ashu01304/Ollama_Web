@@ -18,13 +18,13 @@ const sendOllamaMessage = (message: any): Promise<any> => {
     return new Promise((resolve) => {
         const requestId = `ollama-request-${Date.now()}-${Math.random()}`;
         const listener = (event: MessageEvent) => {
-            if (event.source === window && event.data && event.data.direction === "extension-to-formstr" && event.data.requestId === requestId) {
+            if (event.source === window && event.data && event.data.direction === "extension-to-page" && event.data.requestId === requestId) {
                 window.removeEventListener("message", listener);
                 resolve(event.data.message);
             }
         };
         window.addEventListener("message", listener);
-        window.postMessage({ direction: "formstr-to-extension", message: message, requestId: requestId }, "*");
+        window.postMessage({ direction: "page-to-extension", message: message, requestId: requestId }, "*");
     });
 };
 
@@ -33,7 +33,7 @@ const handleOllamaStream = (message: any, onData: (chunk: any) => void): Promise
     return new Promise((resolve, reject) => {
         const requestId = `ollama-stream-${Date.now()}-${Math.random()}`;
         const listener = (event: MessageEvent) => {
-            if (event.source === window && event.data && event.data.direction === "extension-to-formstr" && event.data.requestId === requestId) {
+            if (event.source === window && event.data && event.data.direction === "extension-to-page" && event.data.requestId === requestId) {
                 const msg = event.data.message;
                 if (msg.type === 'CHUNK') onData(msg.data);
                 else if (msg.type === 'DONE') { window.removeEventListener("message", listener); resolve(); }
@@ -42,7 +42,7 @@ const handleOllamaStream = (message: any, onData: (chunk: any) => void): Promise
             }
         };
         window.addEventListener("message", listener);
-        window.postMessage({ direction: "formstr-to-extension", message: message, requestId: requestId }, "*");
+        window.postMessage({ direction: "page-to-extension", message: message, requestId: requestId }, "*");
     });
 };
 

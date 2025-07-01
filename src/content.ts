@@ -8,7 +8,7 @@ script.src = browser.runtime.getURL('js/bridge.bundle.js');
 // Listen for messages from the injected script (window.postMessage)
 window.addEventListener("message", (event) => {
     // Only accept messages from the window, with the correct direction
-    if (event.source !== window || !event.data || event.data.direction !== "formstr-to-extension") {
+    if (event.source !== window || !event.data || event.data.direction !== "page-to-extension") {
         return;
     }
 
@@ -22,7 +22,7 @@ window.addEventListener("message", (event) => {
         const port = browser.runtime.connect({ name: 'ollama-stream' });
         port.onMessage.addListener((msg) => {
             window.postMessage({
-                direction: "extension-to-formstr",
+                direction: "extension-to-page",
                 message: msg, // Forward the raw chunk, done, or error message
                 requestId: requestId
             }, "*");
@@ -31,7 +31,7 @@ window.addEventListener("message", (event) => {
         port.onDisconnect.addListener(() => {
             const finalMsg = { type: 'DISCONNECTED' };
             window.postMessage({
-                direction: "extension-to-formstr",
+                direction: "extension-to-page",
                 message: finalMsg,
                 requestId: requestId
             }, "*");
@@ -48,7 +48,7 @@ window.addEventListener("message", (event) => {
         browser.runtime.sendMessage(request)
             .then(response => {
                 window.postMessage({
-                    direction: "extension-to-formstr",
+                    direction: "extension-to-page",
                     message: response,
                     requestId: requestId
                 }, "*");
@@ -56,7 +56,7 @@ window.addEventListener("message", (event) => {
             .catch(error => {
                 const errorResponse = { success: false, error: error.message };
                 window.postMessage({
-                    direction: "extension-to-formstr",
+                    direction: "extension-to-page",
                     message: errorResponse,
                     requestId: requestId
                 }, "*");
