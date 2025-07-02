@@ -1,8 +1,9 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import browser from 'webextension-polyfill';
 
 type Model = { name: string };
+type QueueStatus = { heavy: number; light: number };
 
 const Popup = () => {
   const [endpoint, setEndpoint] = useState('');
@@ -23,6 +24,11 @@ const Popup = () => {
   const [isPulling, setIsPulling] = useState(false);
   
   const [modelToConfirmDelete, setModelToConfirmDelete] = useState<string | null>(null);
+
+  const [concurrencyLimits, setConcurrencyLimits] = useState({ heavy: 1, light: 2 });
+  const debounceTimer = useRef<number | null>(null);
+
+  const [queueStatus, setQueueStatus] = useState<QueueStatus>({ heavy: 0, light: 0 });
 
   const _sendMessage = (message: object): Promise<any> => browser.runtime.sendMessage(message);
 
@@ -53,6 +59,18 @@ const Popup = () => {
     loadEndpoint();
     fetchModels();
     loadDomains();
+    _sendMessage({ type: "getLimits" }).then(limits => {
+        if (limits) setConcurrencyLimits(limits);
+    });
+
+    const port = browser.runtime.connect({ name: "popup-status-port" });
+    port.onMessage.addListener((msg) => {
+        if (msg.type === 'queueStatusUpdate') {
+            setQueueStatus(msg.status);
+        }
+    });
+
+    return () => port.disconnect();
   }, []);
 
   const handleSetEndpoint = () => {
@@ -134,13 +152,33 @@ const Popup = () => {
   const cancelDeleteModel = () => {
     setModelToConfirmDelete(null);
   };
+  
+  const handleLimitsChange = (type: 'heavy' | 'light', value: string) => {
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue) || numValue < 1) return;
 
+    const newLimits = { ...concurrencyLimits, [type]: numValue };
+    setConcurrencyLimits(newLimits);
+
+    if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+    }
+
+    debounceTimer.current = window.setTimeout(() => {
+        _sendMessage({ type: "setLimits", limits: newLimits });
+    }, 500);
+  };
+
+  const handleClearQueues = () => _sendMessage({ type: 'clearQueues' });
+  
   const handleAddDomain = () => { if (!newDomain) return; _sendMessage({ type: "addDomain", domain: newDomain }).then(() => { setNewDomain(''); loadDomains(); }); };
   const handleAddCurrentDomain = () => _sendMessage({ type: "addCurrentDomain" }).then(loadDomains);
   const handleAllowAllDomains = () => _sendMessage({ type: "allowAllDomains" }).then(loadDomains);
   const handleRemoveDomain = (domain: string) => _sendMessage({ type: "removeDomain", domain }).then(loadDomains);
   const toggleHelp = () => setIsHelpVisible(!isHelpVisible);
   const toggleAdvanced = () => setIsAdvancedVisible(!isAdvancedVisible);
+
+  const areQueuesEmpty = queueStatus.heavy === 0 && queueStatus.light === 0;
 
   return (
     <div className="container">
@@ -154,7 +192,7 @@ const Popup = () => {
           <p>
             This extension acts as a proxy to your Ollama instance at <strong>{currentEndpoint}</strong> (can be modified in extension). It can forward requests to any valid Ollama API endpoint.
           </p>
-
+          
           <p>
              <strong>Prerequisites:</strong>
             <ul>
@@ -162,7 +200,7 @@ const Popup = () => {
             <li>CORS settings must be configured for your browser extension. See the project's <a href="https://github.com/ashu01304/Ollama_Web" target="_blank" rel="noopener noreferrer">README</a> for instructions.</li>
           </ul>
           </p>
-          
+
           <strong>Example Endpoints:</strong>
           <p>
           <ul>
@@ -180,11 +218,11 @@ const Popup = () => {
       
       <h3>Ollama Endpoint</h3>
       <input
-        type="text"
-        placeholder={`Current: ${currentEndpoint}`}
-        value={endpoint}
-        onChange={(e) => setEndpoint(e.target.value)}
-      />
+          type="text"
+          placeholder={`Current: ${currentEndpoint}`}
+          value={endpoint}
+          onChange={(e) => setEndpoint(e.target.value)}
+          />
       <div className="button-row">
         <button onClick={handleSetEndpoint}>Set Endpoint</button>
         <button onClick={toggleAdvanced}>Advanced {isAdvancedVisible ? '▲' : '▼'}</button>
@@ -192,6 +230,13 @@ const Popup = () => {
       
       {isAdvancedVisible && (
         <div className="advanced-section">
+            <h4>Queue Status</h4>
+            <div className="queue-status-container">
+                <div className="queue-status-item"><span>Heavy Tasks Pending:</span> <strong>{queueStatus.heavy}</strong></div>
+                <div className="queue-status-item"><span>Light Tasks Pending:</span> <strong>{queueStatus.light}</strong></div>
+                <button className="clear-queue-btn" onClick={handleClearQueues} disabled={areQueuesEmpty}>Clear Queues</button>
+            </div>
+
             <h4>Model Management</h4>
             <div className="model-management-container">
                 <input type="text" placeholder="Enter model name (e.g., gemma:2b)" value={modelToPull} onChange={(e) => setModelToPull(e.target.value)} disabled={isPulling} />
@@ -220,6 +265,27 @@ const Popup = () => {
                     )) : <li className="empty-list-item">No models found.</li>}
                 </ul>
             )}
+
+            <h4>Concurrency Limits</h4>
+            <p className="setting-description">Control how many parallel requests are sent to Ollama.</p>
+            <div className="concurrency-settings">
+                <div className="setting-item">
+                    <label htmlFor="heavy-limit">Heavy Tasks Limit</label>
+                    <input
+                        type="number" id="heavy-limit" min="1"
+                        value={concurrencyLimits.heavy}
+                        onChange={(e) => handleLimitsChange('heavy', e.target.value)}
+                    />
+                </div>
+                <div className="setting-item">
+                    <label htmlFor="light-limit">Light Tasks Limit</label>
+                    <input
+                        type="number" id="light-limit" min="1"
+                        value={concurrencyLimits.light}
+                        onChange={(e) => handleLimitsChange('light', e.target.value)}
+                    />
+                </div>
+            </div>
         </div>
       )}
 
