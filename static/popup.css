@@ -207,12 +207,53 @@ button:disabled {
 .advanced-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   padding: 10px;
   border: 1px dashed var(--color-border);
   border-radius: 6px;
   margin-top: 5px;
   background-color: var(--color-muted);
+}
+
+.queue-status-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.queue-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.queue-status-item strong {
+    font-weight: 600;
+    font-size: 1.1em;
+    padding: 2px 8px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+}
+
+.clear-queue-btn {
+    margin-top: 4px;
+    background-color: var(--color-danger);
+    font-size: 0.9em;
+    padding: 8px;
+}
+
+.clear-queue-btn:hover {
+    background-color: var(--color-danger-hover);
+}
+
+.clear-queue-btn:disabled {
+    background-color: var(--color-muted);
+    border: 1px solid #ccc;
+    color: #999;
 }
 
 .model-management-container input { flex: 1; }
@@ -259,4 +300,38 @@ button:disabled {
 }
 .confirmation-buttons .cancel-btn:hover {
   background-color: #bbb;
+}
+
+.setting-description {
+  font-size: 0.85em;
+  color: #555;
+  margin: -4px 0 4px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.concurrency-settings {
+  display: flex;
+  gap: 16px;
+  justify-content: space-around;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.setting-item label {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: #333;
+}
+
+.setting-item input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  font-size: 0.9em;
+  text-align: center;
 }

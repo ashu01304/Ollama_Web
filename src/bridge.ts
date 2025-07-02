@@ -4,7 +4,6 @@ declare global {
             request: (endpoint: string, options: RequestInit) => Promise<any>;
             getModels: () => Promise<any>;
             generate: (params: any, onData?: (chunk: any) => void) => Promise<any>;
-            // ADDED: New helper functions
             chat: (params: any, onData?: (chunk: any) => void) => Promise<any>;
             pull: (params: any, onData?: (chunk: any) => void) => Promise<any>;
             delete: (params: any) => Promise<any>;
@@ -47,7 +46,6 @@ const handleOllamaStream = (message: any, onData: (chunk: any) => void): Promise
 };
 
 window.ollama = {
-    // Low-level request (remains non-streaming)
     request: (endpoint: string, options: RequestInit) => {
         return sendOllamaMessage({
             type: 'ollamaRequest',
@@ -55,11 +53,7 @@ window.ollama = {
             options: { method: options.method, headers: options.headers, body: options.body },
         });
     },
-
-    // High-level functions for common tasks
     getModels: () => sendOllamaMessage({ type: 'getModels' }),
-    
-    // MODIFIED: generate now specifies its endpoint for the generic streaming handler
     generate: (params: any, onData?: (chunk: any) => void) => {
         const message = { type: 'generate', endpoint: '/api/generate', params: params };
         if (params.stream && onData) {
@@ -68,8 +62,6 @@ window.ollama = {
             return sendOllamaMessage(message);
         }
     },
-
-    // ADDED: New helper for the /api/chat endpoint
     chat: (params: any, onData?: (chunk: any) => void) => {
         const message = { type: 'chat', endpoint: '/api/chat', params: params };
         if (params.stream && onData) {
@@ -78,10 +70,7 @@ window.ollama = {
             return sendOllamaMessage(message);
         }
     },
-
-    // ADDED: New helper for the /api/pull endpoint
     pull: (params: any, onData?: (chunk: any) => void) => {
-        // stream is implicitly true when onData is provided, matching Ollama's behavior
         const isStreaming = typeof onData === 'function';
         const message = { type: 'pull', endpoint: '/api/pull', params: { ...params, stream: isStreaming } };
         
@@ -91,13 +80,12 @@ window.ollama = {
             return sendOllamaMessage(message);
         }
     },
-
-    // ADDED: New helper for the /api/delete endpoint
     delete: (params: any) => {
         return sendOllamaMessage({ type: 'delete', endpoint: '/api/delete', params: params });
     },
-    
     testConnection: () => sendOllamaMessage({ type: 'testConnection' })
 };
+
+window.dispatchEvent(new CustomEvent('ollama-ready'));
 
 export {};
