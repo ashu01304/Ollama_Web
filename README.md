@@ -3,6 +3,13 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Built for Chrome & Firefox](https://img.shields.io/badge/Built_for-Chrome_&_Firefox-green.svg)
 
+## 📥 Install from Browser Stores
+
+**You can now directly install the extension from the official browser stores:**
+
+[![Get it on Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-blue?logo=googlechrome&style=for-the-badge)](https://chromewebstore.google.com/detail/ollama-universal-extensio/lcikklkphhplagphmoamknnemokhpeom)
+[![Get it on Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-Install-orange?logo=firefox-browser&style=for-the-badge)](https://addons.mozilla.org/en-US/firefox/addon/ollama-web-extension/)
+
 A secure web extension that acts as a local proxy for [Ollama](https://ollama.com/) instance. It allows web applications to communicate with local language models without exposing the Ollama API to the internet.
 
 This project uses a modern Webpack build system and a unified manifest to automatically generate compatible packages for **Chrome** (Manifest V3) and **Firefox** (Manifest V2).
@@ -134,11 +141,11 @@ Click the extension icon in your browser to:
 
 The extension enables secure interaction by injecting a `window.ollama` object into the pages of allowed domains.
 
-1.  **Authorize Your Web App**: Open the extension popup and add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" list.
-2.  **Communicate from Your Web App**: Once authorized, use the `window.ollama` object, which provides three main functions:
-    *   `getModels()`: A simple helper to list available local models.
-    *   `generate()`: A helper to get a single, non-streamed response from a model.
-    *   `request()`: A powerful, low-level function to interact with any Ollama API endpoint, giving you full control.
+1. **Authorize Your Web App**: Open the extension popup and add your app’s origin (e.g., `http://localhost:3000/*`) to the "Allowed Domains" list.
+2. **Communicate from Your Web App**: Once authorized, use the `window.ollama` object, which provides three main functions:
+   * `getModels()`: A simple helper to list available local models.
+   * `generate()`: A helper to get a single, non-streamed response from a model.
+   * `request()`: A powerful, low-level function to interact with any Ollama API endpoint, giving you full control.
 
 #### Example 1: Fetching available models with `getModels()`
 
@@ -195,6 +202,7 @@ if (window.ollama) {
 The `request` function allows you to call any endpoint in the [Ollama API Documentation](https://github.com/ollama/ollama/blob/main/docs/api.md). This is useful for tasks not covered by the helpers, like pulling new models, creating custom models, or managing embeddings.
 
 Here's how to pull a new model:
+
 ```javascript
 if (window.ollama) {
   async function pullModel() {
@@ -232,6 +240,7 @@ if (window.ollama) {
    yarn install
    ```
 2. Run development server (rebuilds on file change):
+
    ```bash
    # For Chrome
    yarn dev:chrome
@@ -240,13 +249,15 @@ if (window.ollama) {
    yarn dev:firefox
    ```
 3. Create a production build:
+
    ```bash
    # For Chrome
    yarn build:chrome
-   
+
    # For Firefox
    yarn build:firefox
    ```
+
 This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in the `dist/` directory.
 
 ## 🛠️ Technology Stack
@@ -259,4 +270,7 @@ This creates an optimized `.zip` (Chrome) or `.xpi` (Firefox) in the `dist/` dir
 ## 📜 License
 
 MIT License.
+
+```
+
 ```
