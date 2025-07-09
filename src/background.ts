@@ -188,12 +188,11 @@ const handlePopupRequest = async (request: any) => {
         case 'fetchModels': return queueManager.submit(() => performOllamaFetch('/api/tags', { method: 'GET' }), 'light');
         case 'deleteModel': {
             if (request.model) {
-                return
-                queueManager.submit(() =>
+                return queueManager.submit(() =>
                     performOllamaFetch('/api/delete', { method: 'DELETE', body: JSON.stringify({ name: request.model }) }), 'light');
             }
-                return { success: false, error: "Model name not provided." };
-            }
+            return { success: false, error: "Model name not provided." };
+        }
     }
 };
 

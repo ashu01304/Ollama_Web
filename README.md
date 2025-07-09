@@ -45,12 +45,32 @@ Download from the [official website](https://ollama.com/download).
 Verify by running a model:
 
 ```shell
-ollama run llama3
+ollama run llama3.2:3b
 ```
 
 ### 2. Configure Ollama CORS
 
 Ollama blocks website/extension requests for security. Set an environment variable to allow development.
+
+#### Automated Setup (Recommended)
+
+**After building the extension from source (see below), you will find a** **scripts** **folder inside the** **dist/[browser]** **directory. These scripts attempt to configure CORS for you automatically.**
+
+* **On macOS or Linux:** **Run** **setup_macos_linux.sh**
+
+  Generated sh
+
+  ```
+  cd dist/chrome/scripts
+  bash setup_macos_linux.sh
+  ```
+
+  **On Windows:****Run****setup_windows.bat****as an****Administrator**.
+* * **Right-click** **setup_windows.bat** **and select "Run as administrator".**
+
+**These scripts will set the** **OLLAMA_ORIGINS** **environment variable to allow connections from both Chrome and Firefox extensions.** **You must restart the Ollama application after running the script.**
+
+#### Manual Setup
 
 #### For Chrome Development:
 

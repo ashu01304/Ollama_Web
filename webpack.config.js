@@ -76,6 +76,7 @@ module.exports = {
       patterns: [
         { from: "static/icon01.png", to: "icon01.png" },
         { from: "static/popup.css", to: "popup.css" },
+        { from: "scripts/", to: "scripts/" },
       ],
     }),
     // This plugin runs only for production builds
