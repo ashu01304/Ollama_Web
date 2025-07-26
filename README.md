@@ -9,9 +9,7 @@ This project uses a modern Webpack build system and a unified manifest to automa
 
 ![Extension Popup Screenshot](images/ss01.png)
 
-## ✨Features
-
-
+## ✨   Features
 
 
 * **Cross-Browser Support** : Single codebase for Chrome and Firefox.
