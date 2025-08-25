@@ -7,7 +7,7 @@ const DEFAULT_LIGHT_CONCURRENCY = 2;
 const HEAVY_ENDPOINTS = ['/api/generate', '/api/chat', '/api/pull'];
 const HEAVY_TYPES = ['generate', 'chat', 'pull', 'streamRequest'];
 
-const SIGNALING_SERVER_URL = 'wss://your-webrtc-signaling-server.com'; // IMPORTANT: Replace with your actual server URL
+const SIGNALING_SERVER_URL = 'wss://ollama-signaler.onrender.com';
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // Using Google's public STUN server
 
 let popupPorts = new Set<browser.Runtime.Port>();
