@@ -283,6 +283,10 @@ button:disabled {
   margin: 0 0 10px 0;
   font-size: 0.95em;
 }
+.confirmation-buttons {
+  display: flex;
+  gap: 8px;
+}
 .confirmation-buttons button {
   flex: 1;
   font-size: 0.9em;
@@ -334,4 +338,81 @@ button:disabled {
   padding: 8px;
   font-size: 0.9em;
   text-align: center;
+}
+
+/* P2P Section Styles */
+.p2p-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.p2p-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.p2p-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+}
+.p2p-status-dot.connected {
+  background-color: var(--color-accent);
+}
+
+.p2p-mode-selector {
+  display: flex;
+  justify-content: space-around;
+  font-size: 0.9em;
+}
+.p2p-mode-selector label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.p2p-action-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.p2p-action-area button, .p2p-host-id button {
+  font-size: 0.9em;
+}
+
+.p2p-host-id {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fff;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid var(--color-border);
+}
+.p2p-host-id span {
+  flex-grow: 1;
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p2p-host-id button {
+  width: 80px;
+  flex-shrink: 0;
+}
+.p2p-action-area button.disconnect-btn {
+  background-color: var(--color-danger);
+}
+.p2p-action-area button.disconnect-btn:hover {
+  background-color: var(--color-danger-hover);
 }

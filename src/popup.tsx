@@ -4,6 +4,7 @@ import browser from 'webextension-polyfill';
 
 type Model = { name: string };
 type QueueStatus = { heavy: number; light: number };
+type P2PState = { mode: 'NONE' | 'HOST' | 'CLIENT'; status: string; hostId: string | null; peerId: string | null; };
 
 const Popup = () => {
   const [endpoint, setEndpoint] = useState('');
@@ -29,6 +30,10 @@ const Popup = () => {
   const debounceTimer = useRef<number | null>(null);
 
   const [queueStatus, setQueueStatus] = useState<QueueStatus>({ heavy: 0, light: 0 });
+
+  const [p2pState, setP2PState] = useState<P2PState>({ mode: 'NONE', status: 'Disconnected', hostId: null, peerId: null });
+  const [p2pModeSelection, setP2PModeSelection] = useState<'host' | 'client'>('client');
+  const [peerIdInput, setPeerIdInput] = useState('');
 
   const _sendMessage = (message: object): Promise<any> => browser.runtime.sendMessage(message);
 
@@ -62,16 +67,28 @@ const Popup = () => {
     _sendMessage({ type: "getLimits" }).then(limits => {
         if (limits) setConcurrencyLimits(limits);
     });
+    _sendMessage({ type: "p2p_get_status" }).then(state => {
+        if (state) setP2PState(state);
+    });
 
     const port = browser.runtime.connect({ name: "popup-status-port" });
     port.onMessage.addListener((msg) => {
         if (msg.type === 'queueStatusUpdate') {
             setQueueStatus(msg.status);
+        } else if (msg.type === 'p2pStatusUpdate') {
+            setP2PState(msg.state);
         }
     });
 
     return () => port.disconnect();
   }, []);
+  
+  useEffect(() => {
+    // If we connect or disconnect, refresh models
+    if (p2pState.status.includes('Connected') || p2pState.status.includes('Disconnected')) {
+      fetchModels();
+    }
+  }, [p2pState.status]);
 
   const handleSetEndpoint = () => {
     if (!endpoint) return;
@@ -180,6 +197,12 @@ const Popup = () => {
 
   const areQueuesEmpty = queueStatus.heavy === 0 && queueStatus.light === 0;
 
+  const handleStartHosting = () => _sendMessage({ type: 'p2p_start_hosting' });
+  const handleConnectToPeer = () => { if (peerIdInput) _sendMessage({ type: 'p2p_connect', peerId: peerIdInput }); };
+  const handleP2PDisconnect = () => _sendMessage({ type: 'p2p_disconnect' });
+
+  const isP2PConnected = p2pState.mode !== 'NONE';
+
   return (
     <div className="container">
       <div className="title-bar">
@@ -217,19 +240,62 @@ const Popup = () => {
       )}
       
       <h3>Ollama Endpoint</h3>
+      <p className="setting-description" style={{color: isP2PConnected ? 'var(--color-accent)' : 'inherit'}}>
+        {isP2PConnected ? `Using peer connection. Local endpoint is disabled.` : `Using local endpoint.`}
+      </p>
       <input
           type="text"
           placeholder={`Current: ${currentEndpoint}`}
           value={endpoint}
           onChange={(e) => setEndpoint(e.target.value)}
+          disabled={isP2PConnected}
           />
       <div className="button-row">
-        <button onClick={handleSetEndpoint}>Set Endpoint</button>
+        <button onClick={handleSetEndpoint} disabled={isP2PConnected}>Set Endpoint</button>
         <button onClick={toggleAdvanced}>Advanced {isAdvancedVisible ? '▲' : '▼'}</button>
       </div>
       
       {isAdvancedVisible && (
         <div className="advanced-section">
+            <h4>Peer-to-Peer Sharing</h4>
+            <div className="p2p-container">
+              <div className="p2p-status">
+                  <span className={`p2p-status-dot ${p2pState.mode !== 'NONE' ? 'connected' : ''}`}></span>
+                  <span>{p2pState.status}</span>
+              </div>
+
+              {p2pState.mode === 'NONE' ? (
+                  <>
+                      <div className="p2p-mode-selector">
+                          <label><input type="radio" value="client" checked={p2pModeSelection === 'client'} onChange={() => setP2PModeSelection('client')} /> Use a Friend's Ollama</label>
+                          <label><input type="radio" value="host" checked={p2pModeSelection === 'host'} onChange={() => setP2PModeSelection('host')} /> Share My Ollama</label>
+                      </div>
+
+                      {p2pModeSelection === 'client' && (
+                          <div className="p2p-action-area">
+                              <input type="text" placeholder="Enter Friend's Connection ID" value={peerIdInput} onChange={(e) => setPeerIdInput(e.target.value)} />
+                              <button onClick={handleConnectToPeer} disabled={!peerIdInput}>Connect</button>
+                          </div>
+                      )}
+                      {p2pModeSelection === 'host' && (
+                          <div className="p2p-action-area">
+                              <button onClick={handleStartHosting}>Start Sharing</button>
+                          </div>
+                      )}
+                  </>
+              ) : (
+                  <div className="p2p-action-area">
+                      {p2pState.mode === 'HOST' && p2pState.hostId && (
+                          <div className="p2p-host-id">
+                              <span>Your ID: <strong>{p2pState.hostId}</strong></span>
+                              <button onClick={() => navigator.clipboard.writeText(p2pState.hostId || '')}>Copy</button>
+                          </div>
+                      )}
+                      <button className="disconnect-btn" onClick={handleP2PDisconnect}>Disconnect</button>
+                  </div>
+              )}
+            </div>
+
             <h4>Queue Status</h4>
             <div className="queue-status-container">
                 <div className="queue-status-item"><span>Heavy Tasks Pending:</span> <strong>{queueStatus.heavy}</strong></div>
